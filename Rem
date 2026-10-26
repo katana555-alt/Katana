@@ -1,0 +1,333 @@
+local RemXLib = {}
+RemXLib.__index = RemXLib
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+RemXLib.Theme = {
+    Background      = Color3.fromRGB(10, 10, 15),
+    Secondary       = Color3.fromRGB(15, 20, 30),
+    Tertiary        = Color3.fromRGB(25, 30, 45),
+    Accent          = Color3.fromRGB(0, 140, 255),
+    AccentGlow      = Color3.fromRGB(0, 200, 255),
+    Text            = Color3.fromRGB(255, 255, 255),
+    TextDim         = Color3.fromRGB(150, 160, 180),
+    Stroke          = Color3.fromRGB(0, 100, 200),
+    Danger          = Color3.fromRGB(255, 50, 50),
+    Font            = Enum.Font.GothamMedium,
+    FontBold        = Enum.Font.GothamBold,
+    FontTitle       = Enum.Font.FredokaOne,
+}
+
+local function Create(class, props, children)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do obj[k] = v end
+    for _, c in ipairs(children or {}) do c.Parent = obj end
+    return obj
+end
+
+local function Tween(obj, time, props, style)
+    TweenService:Create(obj, TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quint, Enum.EasingDirection.Out), props):Play()
+end
+
+local function AddCorner(parent, radius)
+    return Create("UICorner", { CornerRadius = radius or UDim.new(0, 10), Parent = parent })
+end
+
+local function AddStroke(parent, color, thickness)
+    return Create("UIStroke", { Color = color or RemXLib.Theme.Stroke, Thickness = thickness or 1.5, Parent = parent })
+end
+
+function RemXLib:CreateWindow(config)
+    config = config or {}
+    local title = config.Title or "RemX Hub"
+    local subtitle = config.Subtitle or "Script Hub • v1.0"
+
+    local ScreenGui = Create("ScreenGui", {
+        Name = "RemXGui", ResetOnSpawn = false, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        IgnoreGuiInset = true, Parent = game:GetService("CoreGui")
+    })
+
+    -- TAMAÑO ADAPTABLE
+    local Main = Create("Frame", {
+        Name = "Main", 
+        Size = UDim2.new(0.8, 0, 0.8, 0),
+        Position = UDim2.new(0.1, 0, 0.1, 0),
+        BackgroundColor3 = RemXLib.Theme.Background, 
+        BorderSizePixel = 0, 
+        Active = true, 
+        Parent = ScreenGui
+    })
+    AddCorner(Main, UDim.new(0, 12))
+    AddStroke(Main, RemXLib.Theme.Accent, 2)
+    
+    -- BOTÓN FLOTANTE (AHORA CON LA LETRA "R")
+    local OpenBtn = Create("TextButton", {
+        Size = UDim2.new(0, 45, 0, 45), Position = UDim2.new(0, 20, 0.5, -20),
+        BackgroundColor3 = RemXLib.Theme.Accent, 
+        Text = "R", 
+        TextColor3 = Color3.new(1, 1, 1),
+        TextSize = 24,
+        Font = Enum.Font.GothamBlack, -- Fuente gruesa para que resalte
+        BorderSizePixel = 0, 
+        Visible = false,
+        Parent = ScreenGui
+    })
+    AddCorner(OpenBtn, UDim.new(1, 0))
+    AddStroke(OpenBtn, RemXLib.Theme.AccentGlow, 2) -- Brillo extra
+    
+    OpenBtn.MouseButton1Click:Connect(function()
+        Main.Visible = true
+        OpenBtn.Visible = false
+    end)
+
+    -- Barra Superior
+    local TopBar = Create("Frame", {
+        Name = "TopBar", Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Parent = Main
+    })
+    
+    Create("TextLabel", {
+        Size = UDim2.new(1, -100, 0, 30), Position = UDim2.new(0, 20, 0, 10),
+        BackgroundTransparency = 1, Text = "👑 " .. title, TextColor3 = RemXLib.Theme.Text,
+        Font = RemXLib.Theme.FontTitle, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = TopBar
+    })
+    
+    Create("TextLabel", {
+        Size = UDim2.new(1, -100, 0, 20), Position = UDim2.new(0, 22, 0, 35),
+        BackgroundTransparency = 1, Text = subtitle, TextColor3 = RemXLib.Theme.AccentGlow,
+        Font = RemXLib.Theme.Font, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = TopBar
+    })
+
+    -- Botón Minimizar
+    local MinBtn = Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -80, 0, 15),
+        BackgroundColor3 = RemXLib.Theme.Tertiary, Text = "—", TextColor3 = RemXLib.Theme.Text,
+        Font = Enum.Font.GothamBold, TextSize = 18, BorderSizePixel = 0,
+        Parent = TopBar
+    })
+    AddCorner(MinBtn, UDim.new(0, 8))
+    MinBtn.MouseButton1Click:Connect(function() 
+        Main.Visible = false 
+        OpenBtn.Visible = true
+    end)
+
+    -- Botón Cerrar
+    local CloseBtn = Create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -40, 0, 15),
+        BackgroundColor3 = RemXLib.Theme.Tertiary, Text = "✕", TextColor3 = RemXLib.Theme.Text,
+        Font = Enum.Font.GothamBold, TextSize = 16, BorderSizePixel = 0,
+        Parent = TopBar
+    })
+    AddCorner(CloseBtn, UDim.new(0, 8))
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+    CloseBtn.MouseEnter:Connect(function() Tween(CloseBtn, 0.1, {BackgroundColor3 = RemXLib.Theme.Danger}) end)
+    CloseBtn.MouseLeave:Connect(function() Tween(CloseBtn, 0.1, {BackgroundColor3 = RemXLib.Theme.Tertiary}) end)
+
+    -- SIDEBAR CON SCROLL
+    local Sidebar = Create("ScrollingFrame", {
+        Name = "Sidebar", Size = UDim2.new(0, 140, 1, -80), Position = UDim2.new(0, 15, 0, 70),
+        BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 0,
+        CanvasSize = UDim2.new(0, 0, 0, 0), Parent = Main
+    })
+    Create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = Sidebar })
+
+    -- CONTENIDO CON SCROLL
+    local Content = Create("Frame", {
+        Name = "Content", Size = UDim2.new(1, -170, 1, -80), Position = UDim2.new(0, 165, 0, 70),
+        BackgroundTransparency = 1, Parent = Main
+    })
+
+    -- Drag
+    local dragging, dragStart, startPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = Main.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local Window = { ScreenGui = ScreenGui, Main = Main, Sidebar = Sidebar, Content = Content, Tabs = {} }
+
+    function Window:AddTab(name, icon)
+        local Tab = { Name = name, Content = Content }
+        
+        local Btn = Create("TextButton", {
+            Size = UDim2.new(1, -5, 0, 35), BackgroundColor3 = RemXLib.Theme.Background,
+            Text = "", BorderSizePixel = 0, AutoButtonColor = false, Parent = Sidebar
+        })
+        AddCorner(Btn, UDim.new(0, 8))
+        AddStroke(Btn, Color3.fromRGB(40, 50, 70), 1)
+
+        Create("TextLabel", {
+            Size = UDim2.new(0, 30, 1, 0), Position = UDim2.new(0, 5, 0, 0), BackgroundTransparency = 1,
+            Text = icon or "❓", TextColor3 = RemXLib.Theme.TextDim, Font = Enum.Font.GothamBold, TextSize = 16, Parent = Btn
+        })
+        local BtnText = Create("TextLabel", {
+            Size = UDim2.new(1, -35, 1, 0), Position = UDim2.new(0, 30, 0, 0), BackgroundTransparency = 1,
+            Text = name, TextColor3 = RemXLib.Theme.TextDim, Font = RemXLib.Theme.Font, TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left, Parent = Btn
+        })
+
+        local Page = Create("ScrollingFrame", {
+            Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0,
+            ScrollBarThickness = 3, ScrollBarImageColor3 = RemXLib.Theme.Accent,
+            CanvasSize = UDim2.new(0, 0, 0, 0), Visible = false, Parent = Content
+        })
+        Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = Page })
+
+        Tab.Page = Page
+        Tab.Button = Btn
+
+        Btn.MouseButton1Click:Connect(function()
+            for _, t in pairs(Window.Tabs) do
+                t.Page.Visible = false
+                Tween(t.Button, 0.15, {BackgroundColor3 = RemXLib.Theme.Background})
+                t.Button:FindFirstChildOfClass("TextLabel").TextColor3 = RemXLib.Theme.TextDim
+            end
+            Page.Visible = true
+            Tween(Btn, 0.15, {BackgroundColor3 = RemXLib.Theme.Accent})
+            Btn:FindFirstChildOfClass("TextLabel").TextColor3 = Color3.new(1,1,1)
+        end)
+
+        table.insert(Window.Tabs, Tab)
+        if #Window.Tabs == 1 then
+            Page.Visible = true
+            Btn.BackgroundColor3 = RemXLib.Theme.Accent
+            Btn:FindFirstChildOfClass("TextLabel").TextColor3 = Color3.new(1,1,1)
+        end
+
+        Sidebar.CanvasSize = UDim2.new(0, 0, 0, #Window.Tabs * 43)
+
+        function Tab:AddGroupbox(groupTitle, groupIcon)
+            local Frame = Create("Frame", {
+                Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = RemXLib.Theme.Secondary,
+                BorderSizePixel = 0, Parent = Page
+            })
+            AddCorner(Frame, UDim.new(0, 10))
+            AddStroke(Frame, RemXLib.Theme.Accent, 1.5)
+            
+            Create("TextLabel", {
+                Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1,
+                Text = (groupIcon or "") .. " " .. groupTitle, TextColor3 = RemXLib.Theme.Text,
+                Font = RemXLib.Theme.FontBold, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Parent = Frame
+            })
+
+            local List = Create("Frame", {
+                Size = UDim2.new(1, 0, 0, 0), Position = UDim2.new(0, 0, 0, 45),
+                BackgroundTransparency = 1, Parent = Frame
+            })
+            Create("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = List })
+
+            List.ChildAdded:Connect(function()
+                task.wait()
+                local h = 45
+                for _, c in ipairs(List:GetChildren()) do 
+                    if c:IsA("GuiObject") then h = h + c.Size.Y.Offset + 6 end 
+                end
+                Frame.Size = UDim2.new(1, -10, 0, h)
+                Page.CanvasSize = UDim2.new(0, 0, 0, Page.UIListLayout.AbsoluteContentSize.Y + 30)
+            end)
+
+            local Group = {}
+            
+            function Group:AddToggle(id, opts)
+                local state = opts.Default or false
+                local container = Create("Frame", { Size = UDim2.new(1, -10, 0, 30), BackgroundColor3 = RemXLib.Theme.Tertiary, Parent = List })
+                AddCorner(container, UDim.new(0, 8))
+                Create("TextLabel", {
+                    Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1,
+                    Text = opts.Text or id, TextColor3 = RemXLib.Theme.Text, Font = RemXLib.Theme.Font, TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Left, Parent = container
+                })
+                local ToggleBtn = Create("TextButton", {
+                    Size = UDim2.new(0, 36, 0, 18), Position = UDim2.new(1, -46, 0.5, -9),
+                    BackgroundColor3 = state and RemXLib.Theme.Accent or Color3.fromRGB(50,50,60), Text = "", BorderSizePixel = 0, Parent = container
+                })
+                AddCorner(ToggleBtn, UDim.new(1, 0))
+                local Knob = Create("Frame", {
+                    Size = UDim2.new(0, 14, 0, 14), Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+                    BackgroundColor3 = Color3.new(1,1,1), BorderSizePixel = 0, Parent = ToggleBtn
+                })
+                AddCorner(Knob, UDim.new(1, 0))
+
+                ToggleBtn.MouseButton1Click:Connect(function()
+                    state = not state
+                    Tween(ToggleBtn, 0.15, {BackgroundColor3 = state and RemXLib.Theme.Accent or Color3.fromRGB(50,50,60)})
+                    Tween(Knob, 0.15, {Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
+                    if opts.Callback then opts.Callback(state) end
+                end)
+            end
+
+            function Group:AddButton(id, opts)
+                local Btn = Create("TextButton", {
+                    Size = UDim2.new(1, -10, 0, 30), BackgroundColor3 = RemXLib.Theme.Tertiary,
+                    Text = opts.Text or id, TextColor3 = RemXLib.Theme.Text, Font = RemXLib.Theme.Font, TextSize = 11,
+                    BorderSizePixel = 0, Parent = List
+                })
+                AddCorner(Btn, UDim.new(0, 8))
+                Btn.MouseEnter:Connect(function() Tween(Btn, 0.1, {BackgroundColor3 = RemXLib.Theme.Accent}) end)
+                Btn.MouseLeave:Connect(function() Tween(Btn, 0.1, {BackgroundColor3 = RemXLib.Theme.Tertiary}) end)
+                Btn.MouseButton1Click:Connect(function() if opts.Callback then opts.Callback() end end)
+            end
+
+            function Group:AddSlider(id, opts)
+                local min, max = opts.Min or 0, opts.Max or 100
+                local value = opts.Default or min
+                local container = Create("Frame", { Size = UDim2.new(1, -10, 0, 45), BackgroundColor3 = RemXLib.Theme.Tertiary, Parent = List })
+                AddCorner(container, UDim.new(0, 8))
+                Create("TextLabel", {
+                    Size = UDim2.new(1, -60, 0, 20), Position = UDim2.new(0, 10, 0, 5), BackgroundTransparency = 1,
+                    Text = opts.Text or id, TextColor3 = RemXLib.Theme.Text, Font = RemXLib.Theme.Font, TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Left, Parent = container
+                })
+                local ValLbl = Create("TextLabel", {
+                    Size = UDim2.new(0, 50, 0, 20), Position = UDim2.new(1, -55, 0, 5), BackgroundTransparency = 1,
+                    Text = tostring(value), TextColor3 = RemXLib.Theme.AccentGlow, Font = RemXLib.Theme.FontBold, TextSize = 11,
+                    TextXAlignment = Enum.TextXAlignment.Right, Parent = container
+                })
+                local Bar = Create("Frame", {
+                    Size = UDim2.new(1, -20, 0, 6), Position = UDim2.new(0, 10, 0, 28),
+                    BackgroundColor3 = Color3.fromRGB(40,40,50), Parent = container
+                })
+                AddCorner(Bar, UDim.new(1, 0))
+                local Fill = Create("Frame", {
+                    Size = UDim2.new((value-min)/(max-min), 0, 1, 0),
+                    BackgroundColor3 = RemXLib.Theme.Accent, Parent = Bar
+                })
+                AddCorner(Fill, UDim.new(1, 0))
+
+                local dragging = false
+                Bar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true end end)
+                UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end end)
+                UserInputService.InputChanged:Connect(function(input)
+                    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        local rel = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
+                        value = math.floor(min + (max-min) * rel + 0.5)
+                        Fill.Size = UDim2.new(rel, 0, 1, 0)
+                        ValLbl.Text = tostring(value)
+                        if opts.Callback then opts.Callback(value) end
+                    end
+                end)
+            end
+
+            return Group
+        end
+        return Tab
+    end
+
+    return Window
+end
+
+return RemXLib
